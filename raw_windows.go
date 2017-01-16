@@ -20,7 +20,9 @@ var (
 	_ net.PacketConn = &packetConn{}
 
 	// Loading recvfrom function from ws2_32.DLL library.
-	procRecvfrom = syscall.NewLazyDLL("ws2_32.dll").NewProc("recvfrom")
+	ws232        = syscall.NewLazyDLL("ws2_32.dll")
+	procRecvfrom = ws232.NewProc("recvfrom")
+	procSendto   = ws232.NewProc("sendto")
 )
 
 type packetConn struct {
@@ -214,9 +216,10 @@ func (_ timeSleeper) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
 
+// recvfrom is an implementation for windows function recvfrom which wasn't implemented in the standard library.
+//
+// see: https://github.com/golang/sys/blob/master/windows/syscall_windows.go#L812
 func recvfrom(fd int, p []byte, from *syscall.RawSockaddrAny, fromlen *uint32) (n int, err error) {
-	// implementing syscall.Recvfrom because it isn't implemented for windows.
-	// see: https://github.com/golang/sys/blob/master/windows/syscall_windows.go#L812
 
 	n, _, _ = recvfrom.Call(
 		s.fd,
@@ -233,4 +236,26 @@ func recvfrom(fd int, p []byte, from *syscall.RawSockaddrAny, fromlen *uint32) (
 
 	return n, nil
 
+}
+
+// sendto is an implementation of windows function sendto() which wasn't implemented in the standard library.
+//
+//see: https://github.com/golang/sys/blob/master/windows/syscall_windows.go#L815
+func sendto(fd int, p []byte, flags int, to syscall.SockAddr) (err error) {
+
+	n, _, _ = procSendto.Call(
+		uintptr(fd),
+		uintptr(unsafe.Pointer(&p)),
+		uintptr(len(p)),
+		uintptr(flags),
+		uintptr(unsafe.Pointer(&to)),
+		uintptr(len(to)))
+
+
+	if == -1 {
+		//TODO(shaybix): check for errors
+		return fmt.Errorf("")
+	}
+
+	return nil
 }
