@@ -6,6 +6,11 @@ import (
 	"net"
 	"sync"
 	"time"
+	"unsafe"
+
+	"syscall"
+
+	"fmt"
 
 	"golang.org/x/net/bpf"
 	"golang.org/x/net/context"
@@ -13,6 +18,9 @@ import (
 
 var (
 	_ net.PacketConn = &packetConn{}
+
+	// Loading recvfrom function from ws2_32.DLL library.
+	procRecvfrom = syscall.NewLazyDLL("ws2_32.dll").NewProc("recvfrom")
 )
 
 type packetConn struct {
@@ -67,7 +75,7 @@ func listenPacket(ifi *net.Interface, proto Protocol) (*packetConn, error) {
 
 func newPacketConn(ifi *net.Interface, s socket, pbe int, sleeper sleeper) (*packetConn, error) {
 
-	if err := s.Bind(s.fd, &syscall.RawSockAddr, unsafe.Sizeof(&syscall.RawSockAddr)); err != nil {
+	if err := s.Bind(s.fd, &syscall.RawSockAddrAny, unsafe.Sizeof(&syscall.RawSockAddrAny)); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +184,16 @@ func (s *sysSocket) Close() error { return syscall.Close(s.fd) }
 func (s *sysSocket) FD() int { return s.fd }
 
 func (s *sysSocket) Recvfrom(p []byte, flags int) (int, syscall.Sockaddr, error) {
-	return syscall.Recvfrom(s.fd, p, flags)
+
+	var rawAddrAny = syscall.RawSockAddrAny{}
+
+	n, err := recvfrom(s.fd, p, &rawAddrAny, &len(rawAddrAny))
+	if err != nil {
+		// TODO(shaybix): handle error
+		return nil, nil, err
+	}
+
+	return n, rawAddrAny, nil
 }
 
 func (s *sysSocket) Sendto(p []byte, flags int, to syscall.Sockaddr) error {
@@ -195,4 +212,25 @@ type timeSleeper struct{}
 
 func (_ timeSleeper) Sleep(d time.Duration) {
 	time.Sleep(d)
+}
+
+func recvfrom(fd int, p []byte, from *syscall.RawSockaddrAny, fromlen *uint32) (n int, err error) {
+	// implementing syscall.Recvfrom because it isn't implemented for windows.
+	// see: https://github.com/golang/sys/blob/master/windows/syscall_windows.go#L812
+
+	n, _, _ = recvfrom.Call(
+		s.fd,
+		uintptr(&p),
+		0,
+		uinptr(flags),
+		uintptr(unsafe.Pointer(from)),
+		unintptr(unsafe.Pointer(fromlen)))
+
+	if n == -1 {
+		// TODO(shaybix): handle error with WSAGetLastError
+		return nil, fmt.Errorf("")
+	}
+
+	return n, nil
+
 }
