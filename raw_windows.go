@@ -16,6 +16,113 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Windows sockets error codes
+const (
+	wsa_INVALID_HANDLE    syscall.Errno = 6
+	wsa_NOT_ENOUGH_MEMORY syscall.Errno = 8
+	wsa_INVALID_PARAMETER syscall.Errno = 87
+
+	wsa_OPERATION_ABORTED syscall.Errno = 995
+	wsa_IO_INCOMPLETE     syscall.Errno = 996
+	wsa_IO_PENDING        syscall.Errno = 997
+
+	wsaEINTR syscall.Errno = 10004
+	wsaEBADF syscall.Errno = 10009
+
+	wsaEACCES syscall.Errno = 10013
+	wsaEFAULT syscall.Errno = 10014
+
+	wsaEINVAL syscall.Errno = 10022
+	wsaEMFILE syscall.Errno = 10024
+
+	wsaEWOULDBLOCK     syscall.Errno  = 10035
+	wsaEINPROGRESS     syscall.Errno  = 10036
+	wsaEALREADY        syscall.Errno  = 10037
+	wsaENOTSOCK        syscall.Errno  = 10038
+	wsaEDESTADDRREQ    syscall.Errno  = 10039
+	wsaEMSGSIZE        syscall.Errno  = 10040
+	wsaEPROTOTYPE      syscall.Errno  = 10041
+	wsaENOPROTOOPT     syscall.Errno  = 10042
+	wsaEPROTONOSUPPORT syscall.Errrno = 10043
+	wsaESOCKTNOSUPPORT syscall.Errno  = 10044
+	wsaEOPNOTSUPP      syscall.Errno  = 10045
+	wsaEPFNOSUPPORT    syscall.Errno  = 10046
+	wsaEAFNOSUPPORT    syscall.Errno  = 10047
+	wsaEADDRINUSE      syscall.Errno  = 10048
+	wsaEADDRNOTAVAIL   syscall.Errno  = 10049
+	wsaENETDOWN        syscall.Errno  = 10050
+	wsaENETUNREACH     syscall.Errno  = 10051
+	wsaENETRESET       syscall.Errno  = 10052
+	wsaECONNABORTED    syscall.Errno  = 10053
+	wsaECONNRESET      syscall.Errno  = 10054
+	wsaENOBUFS         syscall.Errno  = 10055
+	wsaEISCONN         syscall.Errno  = 10056
+	wsaENOTCONN        syscall.Errno  = 10057
+	wsaESHUTDOWN       syscall.Errno  = 10058
+	wsaETOOMANYREFS    syscall.Errno  = 10059
+	wsaETIMEDOUT       syscall.Errno  = 10060
+	wsaECONNREFUSED    syscall.Errno  = 10061
+	wsaELOOP           syscall.Errno  = 10062
+	wsaENAMETOOLONG    syscall.Errno  = 10063
+	wsaEHOSTDOWN       syscall.Errno  = 10064
+	wsaEHOSTUNREACH    syscall.Errno  = 10065
+	wsaENOTEMPTY       syscall.Errno  = 10066
+	wsaEPROCLIM        syscall.Errno  = 10067
+	wsaEUSERS          syscall.Errno  = 10068
+	wsaEDQUOT          syscall.Errno  = 10069
+	wsaESTALE          syscall.Errno  = 10070
+	wsaEREMOTE         syscall.Errno  = 10071
+
+	wsaSYSNOTREADY     syscall.Errno = 10091
+	wsaVERNOTSUPPORTED syscall.Errno = 10092
+	wsaNOTINITIALISED  syscall.Errno = 10093
+
+	wsaEDISCON             syscall.Errno = 10101
+	wsaENOMORE             syscall.Errno = 10102
+	wsaECANCELLED          syscall.Errno = 10103
+	WSAEINVALIDPROCTABLE   syscall.Errno = 10104
+	WSAEINVALIDPROVIDER    syscall.Errno = 10105
+	WSAEPROVIDERFAILEDINIT syscall.Errno = 10106
+	WSASYSCALLFAILURE      syscall.Errno = 10107
+	WSASERVICE_NOT_FOUND   syscall.Errno = 10108
+	WSATYPE_NOT_FOUND      syscall.Errno = 10109
+	WSA_E_NO_MORE          syscall.Errno = 10110
+	WSA_E_CANCELLED        syscall.Errno = 10111
+	WSAEREFUSED            syscall.Errno = 10112
+
+	WSAHOST_NOT_FOUND          syscall.Errno = 11001
+	WSATRY_AGAIN               syscall.Errno = 11002
+	WSANO_RECOVERY             syscall.Errno = 11003
+	WSANO_DATA                 syscall.Errno = 11004
+	WSA_QOS_RECEIVERS          syscall.Errno = 11005
+	WSA_QOS_SENDERS            syscall.Errno = 11006
+	WSA_QOS_NO_SENDERS         syscall.Errno = 11007
+	WSA_QOS_NO_RECEIVERS       syscall.Errno = 11008
+	WSA_QOS_REQUEST_CONFIRMED  syscall.Errno = 11009
+	WSA_QOS_ADMISSION_FAILURE  syscall.Errno = 11010
+	WSA_QOS_POLICY_FAILURE     syscall.Errno = 11011
+	WSA_QOS_BAD_STYLE          syscall.Errno = 11012
+	WSA_QOS_BAD_OBJECT         syscall.Errno = 11013
+	WSA_QOS_TRAFFIC_CTRL_ERROR syscall.Errno = 11014
+	WSA_QOS_GENERIC_ERROR      syscall.Errno = 11015
+	WSA_QOS_ESERVICETYPE       syscall.Errno = 11016
+	WSA_QOS_EFLOWSPEC          syscall.Errno = 11017
+	WSA_QOS_EPROVSPECBUF       syscall.Errno = 11018
+	WSA_QOS_EFILTERSTYLE       syscall.Errno = 11019
+	WSA_QOS_EFILTERTYPE        syscall.Errno = 11020
+	WSA_QOS_EFILTERCOUNT       syscall.Errno = 11021
+	WSA_QOS_EOBJLENGTH         syscall.Errno = 11022
+	WSA_QOS_EFLOWCOUNT         syscall.Errno = 11023
+	WSA_QOS_EUNKOWNPSOBJ       syscall.Errno = 11024
+	WSA_QOS_EPOLICYOBJ         syscall.Errno = 11025
+	WSA_QOS_EFLOWDESC          syscall.Errno = 11026
+	WSA_QOS_EPSFLOWSPEC        syscall.Errno = 11027
+	WSA_QOS_EPSFILTERSPEC      syscall.Errno = 11028
+	WSA_QOS_ESDMODEOBJ         syscall.Errno = 11029
+	WSA_QOS_ESHAPERATEOBJ      syscall.Errno = 11030
+	WSA_QOS_RESERVED_PETYPE    syscall.Errno = 11031
+)
+
 var (
 	_ net.PacketConn = &packetConn{}
 
@@ -221,6 +328,8 @@ func (_ timeSleeper) Sleep(d time.Duration) {
 // see: https://github.com/golang/sys/blob/master/windows/syscall_windows.go#L812
 func recvfrom(fd int, p []byte, from *syscall.RawSockaddrAny, fromlen *uint32) (n int, err error) {
 
+	// TODO(shaybix): consider swapping out syscall.LazyProc.Call() for syscall.Syscall() as it is used
+	// in the standard library. Perhaps better?
 	n, _, _ = recvfrom.Call(
 		s.fd,
 		uintptr(&p),
@@ -230,7 +339,8 @@ func recvfrom(fd int, p []byte, from *syscall.RawSockaddrAny, fromlen *uint32) (
 		unintptr(unsafe.Pointer(fromlen)))
 
 	if n == -1 {
-		// TODO(shaybix): handle error with WSAGetLastError
+
+		//TODO(shaybix): check for errors
 		return nil, fmt.Errorf("")
 	}
 
@@ -251,8 +361,7 @@ func sendto(fd int, p []byte, flags int, to syscall.SockAddr) (err error) {
 		uintptr(unsafe.Pointer(&to)),
 		uintptr(len(to)))
 
-
-	if == -1 {
+	if n == -1 {
 		//TODO(shaybix): check for errors
 		return fmt.Errorf("")
 	}
